@@ -17,6 +17,7 @@ import net.minecraft.fluid.Fluid;
 import net.minecraft.item.map.MapState;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.recipe.RecipeManager;
+import net.minecraft.registry.BuiltinRegistries;
 import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
@@ -66,7 +67,7 @@ public class WorldSchematic extends World
                           Supplier<Profiler> supplier,
                           @Nullable WorldRendererSchematic worldRenderer)
     {
-        super(properties, REGISTRY_KEY, dimension, supplier, true, false, 0L, 0);
+        super(properties, REGISTRY_KEY, MinecraftClient.getInstance().getNetworkHandler().getRegistryManager(), dimension, supplier, true, false, 0L, 0);
 
         this.mc = MinecraftClient.getInstance();
         this.worldRenderer = worldRenderer;
@@ -225,21 +226,16 @@ public class WorldSchematic extends World
     @Override
     public List<Entity> getOtherEntities(@Nullable final Entity except, final Box box, Predicate<? super Entity> predicate)
     {
-        final int minY = MathHelper.floor(box.minY / 16.0);
-        final int maxY = MathHelper.floor(box.maxY / 16.0);
         final List<Entity> entities = new ArrayList<>();
         List<ChunkSchematic> chunks = this.getChunksWithinBox(box);
 
         for (ChunkSchematic chunk : chunks)
         {
-            for (int cy = minY; cy <= maxY; ++cy)
-            {
-                chunk.getEntityListForSectionIfExists(cy).forEach((e) -> {
-                    if (e != except && box.intersects(e.getBoundingBox()) && predicate.test(e)) {
-                        entities.add(e);
-                    }
-                });
-            }
+            chunk.getEntityList().forEach((e) -> {
+                if (e != except && box.intersects(e.getBoundingBox()) && predicate.test(e)) {
+                    entities.add(e);
+                }
+            });
         }
 
         return entities;
